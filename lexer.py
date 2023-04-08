@@ -1,3 +1,9 @@
+from graphviz import Digraph
+import copy
+import json
+import re
+
+
 
 
 def insert_sequence(str1, str2, index):
@@ -32,7 +38,8 @@ def ClassesPreprocessor(infix):
             insideClass = False
         if(insideClass and c in alphabet and infix[i+1] in alphabet):
             processed_infix.append('|')
-    
+    if(insideClass):
+      raise ValueError(f"Your Regex is erronous; Square Brackets are not closed")
     return ''.join(processed_infix)
 
         
@@ -93,7 +100,7 @@ def shunt(infix):
     #for every character c in input infix
     while infix != [] and i < len(infix):
         c = infix[i]
-        print(f'\nindex: {i} in infix: {infix} looking at character: {c}')
+        #print(f'\nindex: {i} in infix: {infix} looking at character: {c}')
         
         #if opening bracket
         if c in ['(' , '[']:
@@ -102,22 +109,24 @@ def shunt(infix):
         #if closing bracket
         elif c == ')':
             # pop until we reach the matching bracket
-            while stack[-1] != '(':
-                if stack == []:                    #if stack became empty, meaning the bracket is not opened aslan, then raise error
-                    return False
+            while stack and stack[-1] != '(':
                 postfix = postfix + stack[-1]  #append to postfix
                 stack = stack[:-1]  #then pop stack
+            if not stack:                    #if stack became empty, meaning the bracket is not opened aslan, then raise error
+                raise ValueError(f"Your Regex is erronous; Brackets are opened but not closed")
+                return False
 
             stack = stack[:-1]  # another pop to remove the open bracket in the stack, it is useless
     
 
         elif c == ']':
             # pop until we reach the matching bracket
-            while stack[-1] != '[':
-                if stack == []:                    #if stack became empty, meaning the bracket is not opened aslan
-                    return False
+            while stack and stack[-1] != '[':
                 postfix = postfix + stack[-1]  #append to postfix
                 stack = stack[:-1]  #pop stack
+            if not stack:                    #if stack became empty, meaning the bracket is not opened aslan
+              raise ValueError (f"Your Regex is erronous; Square Brackets are opened but not closed")
+              return False
 
             stack = stack[:-1]  # another pop to remove the open bracket in the stack
 
@@ -151,10 +160,8 @@ def shunt(infix):
                     processed_list.append(v)
             
             processed_list.append('|')
-            #print(f"i before: {i}")
             infix = insert_sequence(infix, ''.join(processed_list), i+1)
-            #print(infix)
-            #print(f"i after: {i}")
+           
 
 
 
@@ -167,8 +174,16 @@ def shunt(infix):
     #finalizing step after infix is empty now, just pop all the stack and append them all to postfix
     while stack:
         if stack[-1] in ['(', '[']:                             #if we found an opened bracket but not closed when finalizing (no more inputs)
+            raise ValueError (f"Your Regex is erronous; Brackets or Square Brackets are not closed")
             return False
         postfix, stack = postfix + stack[-1], stack[:-1]
 
+
+    #final check by using re.compile  ;)
+    try:
+      re.compile(infix)
+    except Exception as e:
+      raise ValueError(f"Your Regex is erronous; {e}")
+      return False
     #return the result
     return postfix
